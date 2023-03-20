@@ -1,23 +1,23 @@
 import express from "express";
 const router = express.Router();
-import * as user from "./src/controller/userController";
+import * as user from "./src/modules/authentication/userController";
 import { validator, loginSchema, signUpSchema,changePWSchema } from "./src/validator/validation";
 import passport from "passport";
 
 //============POST api==============//
-router.post("/api/v1/signup", validator(signUpSchema), user.signUp)
+router.post("/signup", validator(signUpSchema), user.signUp)
 
-router.post("/api/v1/login", validator(loginSchema), user.login)
+router.post("/login", validator(loginSchema), user.login)
 
-router.get("/api/v1/fetchDetails", 
+router.get("/fetchDetails", 
        passport.authenticate("jwt", { session: false }), user.fetchDetails)
 
-router.post("/api/v1/forgetpassword", user.forgetPassword )  
+router.post("/forgetpassword", user.forgetPassword )  
 
-router.post("/api/v1/resetpassword" , user.resetPassword )
+router.post("/resetpassword" , user.resetPassword )
 
-// router.post("/api/v1/changepassword",
-// passport.authenticate("jwt", { session: false }), validator(changePWSchema), user.changePassword)
+router.post("/changepassword",
+passport.authenticate("jwt", { session: false }), validator(changePWSchema), user.changePassword)
 
 
 

@@ -1,7 +1,7 @@
 import passport from "passport";
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Strategy as googleAuth } from "passport-google-oauth20";
-import userModel from "../model/userModel";
+import userModel, { User } from "./userModel";
 import { Request, Response } from "express";
 
 // ===========================passportJWT============================//
@@ -15,14 +15,15 @@ export function applypassport() {
 
     passport.use(new Strategy(options, async function (jwt_payload, done) {
 
-        // console.log(jwt_payload)
+        // console.log(jwt_payload.userId)
         // res.set({ id: jwt_payload._id })
 
         try {
-            const user = await userModel.findOne({ id: jwt_payload._id })
+            const user = await userModel.findById(jwt_payload.userId)
             if (user) {
                 return done(null, user)
             }
+
         } catch (error) {
             return error;
         }

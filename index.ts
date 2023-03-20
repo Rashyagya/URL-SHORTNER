@@ -4,7 +4,7 @@ import passport from "passport";
 import dotenv from "dotenv";
 import router from "./app.route";
 import { connect } from "mongoose";
-import { applypassport, apllyGoogleStrategy } from "./src/middleware/authentication";
+import { applypassport, apllyGoogleStrategy } from "./src/modules/authentication/auth";
 
 
 dotenv.config();
@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 applypassport();
 apllyGoogleStrategy();
 
-app.use('/', router)
+app.use('/api/v1/', router)
 
 
 const PORT = process.env.SERVER_PORT

@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import usermodel, { User } from "../model/userModel";
+import usermodel, { User } from "./userModel";
 import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import * as service from "../services/sevice"
+import * as userService from "./userSevice"
+import userModel from "./userModel";
 
 
 //=================================register=======================================//
@@ -16,7 +17,7 @@ export async function signUp(req: Request, res: Response) {
     let encryptedPassword = await bcrypt.hash(password, 8)
     password = encryptedPassword;
     
-     let data = await service.registerUser(fullName,email,password)
+     let data = await userService.registerUser(fullName,email,password)
     return res.status(httpStatus.CREATED)
       .send({ status: true, message: "Successfully", data:data })
 
@@ -35,19 +36,20 @@ export async function login(req: Request, res: Response) {
   try {
     let { email, password } = req.body;
 
-    let user: User | null = await usermodel.findOne({ email: email })
+    // console.log(email,password)
+    let user: User | null = await userService.loginUser(email as string,password as string)
 
     if (!user) {
       return res.status(httpStatus.NOT_FOUND).send({ status: false, message: "User not found" });
     } else {
-      let comparePassword = bcrypt.compareSync(password, user.password)
+      let comparePassword:boolean = bcrypt.compareSync(password, user.password)
 
       if (!comparePassword) {
         return res.status(401).send({ status: false, message: "Incorrect Password" });
       }
     }
 
-    const token = jwt.sign({ "userId": user._id, },
+    const token:string = jwt.sign({ "userId": user._id, },
       "adCreative",
       { expiresIn: "10hr" }
     );
@@ -57,7 +59,7 @@ export async function login(req: Request, res: Response) {
     return res.status(httpStatus.OK).send({
       status: true,
       message: "User logged in successfully", 
-      data: {userId: user, token: token}
+      data: {user:user, token:token}
     });
 
   } catch (error) {
@@ -90,16 +92,16 @@ export async function fetchDetails(req: Request, res: Response) {
 
 export async function forgetPassword(req: Request, res: Response) {
   try {
-    let userData = await usermodel.findOne({ email: req.body.email });
+    let email = req.body.email
+    let userData = await userService.finduserByemail(email as string);
 
     if (userData) {
-      let otpcode = Math.floor((Math.random() * 10000) + 1);
+      let otpcode:number = Math.floor((Math.random() * 10000) + 1);
 
-      let otpData = await usermodel
-        .findOneAndUpdate({ email: userData.email }, {
+      let otpData = await userService.updateUser(email ,{
           otp: otpcode,
           expireIn: new Date().getTime() + 300 * 1000    //expaireIn 5mint
-        }, { new: true }
+        }
         );
 
       const transporter = nodemailer.createTransport({
@@ -149,10 +151,11 @@ export async function forgetPassword(req: Request, res: Response) {
 
 export async function resetPassword(req: Request, res: Response) {
     try {
-      let Data = await usermodel.findOne({email:req.body.email, otp:req.body.otp});
+      let { email, otp} = req.body
+      let Data = await userService.resetUser(email as string, otp as number);
       if(Data){
 
-        let currentTime = new Date().getTime();
+        let currentTime:number = new Date().getTime();
         let diff = Data.expireIn - currentTime;
         console.log(diff);
 
@@ -184,29 +187,44 @@ export async function resetPassword(req: Request, res: Response) {
 
 //============================change password==============================//
 
-// export async function changePassword(req: Request, res: Response) {
-//   try {
-//     let { password, newPassword, confirmNewPassword } = req.body;
+export async function changePassword(req: Request, res: Response) {
+  try {
+    let { password, newPassword, confirmNewPassword } = req.body;
+    let userId = req.user;
+ 
+    let user: User | null = await usermodel.findById((userId),{otp:false,expireIn:false})
 
-//     const _id = res.get("_id");
-//     // console.log(_id)
+    if (!user) {
+      return res.status(httpStatus.NOT_FOUND).send({ status: false, message: "User not found" });
+    } else {
+      let comparePassword:boolean = bcrypt.compareSync(password, user.password)
 
-//     let encryptedPassword = await bcrypt.hash(newPassword, 10)
-//     newPassword = encryptedPassword;
+      if (!comparePassword) {
+        return res.status(401).send({ status: false, message: "Incorrect Password" });
+      }
+    }
 
-//     const userData = await usermodel
-//     .findByIdAndUpdate({_id:_id},{password: newPassword},{new:true})
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-//     return res.status(httpStatus.OK)
-//       .send({ status: true, message: "password Updated successfully", data: userData })
+    // update the user's password in the database
+    user.password = hashedPassword;
+    await user.save();
+    
 
-//   } catch (error) {
-//     const err: Error = error as Error;
-//     res.status(httpStatus.INTERNAL_SERVER_ERROR)
-//       .send({ message: err.message });
-//   }};
+    return res.status(httpStatus.OK).send({
+      status: true,
+      message: "password update successfully", 
+      data:user
+    });
 
-
+  } catch (error) {
+    const err: Error = error as Error;
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).send({
+      message: err.message,
+    });
+  }
+}
 
 
 
