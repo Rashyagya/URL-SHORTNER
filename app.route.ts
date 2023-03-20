@@ -19,31 +19,30 @@ router.post("/resetpassword" , user.resetPassword )
 router.post("/changepassword",
 passport.authenticate("jwt", { session: false }), validator(changePWSchema), user.changePassword)
 
-
-
 //===========login with google api==========//
 
-router.get("/", passport.authenticate("google", { scope: ['email','profile'] }))
+router.get(
+  "/",
+  passport.authenticate("google", { scope: ["email", "profile"] })
+);
 
-router.get("/googlelogin",
-passport.authenticate("google",{
-    successRedirect : '/protected' ,
-    failureRedirect:"/auth/fail" , 
-})
+router.get(
+  "/googlelogin",
+  passport.authenticate("google", {
+    successRedirect: "/protected",
+    failureRedirect: "/auth/fail",
+  })
 );
 
 router.get("/auth/fail", (req, res) => {
-    res.send("user login failed")
-})
+  res.send("user login failed");
+});
 
 router.get("/logout", (req, res) => {
-    req.logout(err => console.log(err
-    )
-    )
-    console.log(req.isAuthenticated());
+  req.logout((err) => console.log(err));
+  console.log(req.isAuthenticated());
 
-    res.send("user logged out")
-})
-
+  res.send("user logged out");
+});
 
 export default router;
