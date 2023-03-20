@@ -192,7 +192,7 @@ export async function changePassword(req: Request, res: Response) {
     let { password, newPassword, confirmNewPassword } = req.body;
     let userId = req.user;
  
-    let user: User | null = await usermodel.findById((userId),{otp:false,expireIn:false})
+    let user: User | null = await userService.userById(userId as string)
 
     if (!user) {
       return res.status(httpStatus.NOT_FOUND).send({ status: false, message: "User not found" });
@@ -205,9 +205,8 @@ export async function changePassword(req: Request, res: Response) {
     }
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const hashedPassword:string = await bcrypt.hash(newPassword, salt);
 
-    // update the user's password in the database
     user.password = hashedPassword;
     await user.save();
     

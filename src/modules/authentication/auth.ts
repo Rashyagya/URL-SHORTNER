@@ -16,7 +16,6 @@ export function applypassport() {
     passport.use(new Strategy(options, async function (jwt_payload, done) {
 
         // console.log(jwt_payload.userId)
-        // res.set({ id: jwt_payload._id })
 
         try {
             const user = await userModel.findById(jwt_payload.userId)

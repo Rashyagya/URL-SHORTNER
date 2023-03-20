@@ -24,3 +24,7 @@ export async function updateUser(email:string, updateBody:any){
 export async function resetUser(email:string,otp:number) {
     return await userModel.findOne({email, otp});
 }
+
+export async function userById(userId:string){
+    return await userModel.findById(userId, {otp:false,expireIn:false})
+}
